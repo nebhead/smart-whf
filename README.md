@@ -4,6 +4,8 @@
 
 This is a _smarter_ whole house fan controller that can be controlled via a Web UI, and sports a nice OLED screen for status while operating.
 
+**Warning:** It should not go without saying that working with high voltage power is extremely dangerous and should be attempted only by experienced/qualified persons.  This project is provided as-is, with no warranty, gaurentees of fitness, and disclaims all potential damages.  The developer assumes no liability for damage, injury or death that might result from using this.  Implement at your own risk.  
+
 __Features:__
 
 * Web UI for controlling speed and setting timer
@@ -52,7 +54,8 @@ AHhh! Not enough space for the relay to tuck up into this outlet.  I ended up sw
 * **SSD1306 OLED Display** - Cheap and commonly found OLED display. This is not the specific one I used, but here is a similar verson on [Amazon](https://www.amazon.com/128X64-Display-SSD1306-Arduino-Raspberry/dp/B085WCRS7C). 
 * **Tactile Switches** - I purchased a bunch of sizes of tactile switches and just used the 8 or 9mm sizes for my project, but your mileage may vary. [Amazon Link](https://www.amazon.com/gp/product/B071KX71SV)
 * **Project Board** - I utilized some standard 4cm x 6cm project board for this project, but you could choose to utilize other sizes.  [Amazon Link](https://www.amazon.com/gp/product/B00NQ37V0K)
-* **2.54pitch headers** - As with the dupont cables, these can be readily found almost anywhere, including Amazon.   
+* **2.54pitch headers** - As with the dupont cables, these can be readily found almost anywhere, including Amazon.
+* **220V 5A Slow Blow Fuses & Fuse Holders** - To add some protection to your home, I highly recommend using a fuse to this build so that if a short occurs, it will hopefully blow the fuse and prevent an electrical fire.  [Amazon Link to Fuse Assortment](https://www.amazon.com/gp/product/B08QCDHPCJ/),  [Amazon Link to Fuse Holder](https://www.amazon.com/DIGITEN-5x20mm-Holder-Inline-screw/dp/B00VLBAF84/)
 
 ### Default GPIO Mapping
 + GPIO 0 - Add Time Button

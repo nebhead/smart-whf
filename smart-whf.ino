@@ -102,6 +102,8 @@ unsigned long now = 0; // Tracks the current millis output
 
 String timestring = "";  // Time String to display
 
+String favicon = "<link rel=\"shortcut icon\" href=\"data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAkpJREFUOE99kz9IclEYxp9r/iPExaGgoE2LlHCpFHQIjIIQjGpJcdAhCBwcFRuzljZxyEk3URQcKqIhHOQKhUggGiEiijopggSKN865edEv+d7lnj/P+7vnfc57GI7jOPwGGRYKBUgkEmi12snyf7/MBNBqtXB2doZsNguGYXB/fw+XyyUkt9ttvL6+YmVlBUajkWpIUMBoNMLu7i7e3t6EhKOjI2QyGTrP5XI4PDxEr9ejczKOx+NQKBQ84Pn5Gfv7+zNHPT4+RjKZxPf3N9RqNer1+sy+w+FANBrlAUR4cnIyI9jb28PLywuF/LtHhAsLC+h0Ojyg2+1S0xqNhgAhRl5fX1PI4+PjHyNlMhmazSYPILufn5+w2+3I5/NUbLVaEQwGMRwOcXFxgWKxCJPJBLlcjvF4DLfbTTUCgCQR1vv7O+7u7uD3+2E2m6FSqRCJREBuYV4pM4DJOa+urqj49PQUy8vL8Pl8iMViOD8/h8VigVgsFkpixuMxFwgEkE6nIZVKQfyoVqswGAy4vb3FYDCAx+NBpVKhSZubm0gkElhfX+f7gGVZbmdnZ263eb1emkDqnWpYrK2toVwugxjJlEolbmNjYy6gVCrRP2k0GuEEEyHLstje3uZNtNlstITpODg4wMPDA13S6/X0jUxCJBKhVqthdXWVB/T7fTidTqRSKarZ2trC09MTlpaW6Fyn0+Hj40MAkGsNh8O8B9Ov8evri5pIANNOh0IhaiRprsvLS9zc3NDxH8BcI34XyWtdXFyEUqmckf0AN/wOdCsRyqUAAAAASUVORK5CYII=\" />";
+
 // Fan Icon Animation - 24x24 ICON rotates 22.5 degrees per step
 const unsigned char fanicon0 [] PROGMEM = {
   0x00, 0x3e, 0x00, 0x00, 0x7f, 0x80, 0x00, 0xff, 0x80, 0x00, 0xff, 0x80, 0x00, 0xff, 0x80, 0x00, 
@@ -639,8 +641,9 @@ void setOff() {
 void handleRoot() {
   String response ="<!DOCTYPE html>"
   "<html>"
-    "<head>"
-      "<style>"
+    "<head>";
+    response += favicon;
+    response += "<style>"
         ".button {"
           "background-color: #036bfc;"
           "border: none;"
@@ -746,8 +749,9 @@ void handleDiag() {
 
   String response ="<!DOCTYPE html>"
   "<html>"
-    "<head>"
-      "<style>"
+    "<head>";
+    response += favicon;
+    response += "<style>"
         ".button {"
           "background-color: #036bfc;"
           "border: none;"
