@@ -195,7 +195,7 @@ Pressing the Speed button when the fan is OFF, will set the timer to the default
 
 Pressing the Speed button and the Timer button at the _same_ time will briefly display the WiFi SSID and the IP Address of the device.  This might be helpful if you are trying to connect to the web interface and forgot the IP.  
 
-Pressing the Speed button and the Timer button at the _same_ time for six seconds will __LOCK__ the physical buttons.  If the buttons are pressed after LOCK mode is enabled, then the screen will display "LOCKED".  Pressing the Speed button and the Timer button at the _same_ time for three more seconds will __UNLOCK__ the physical buttons.  __Note:__ Locking from the physical buttons will cancel the timer and turn off the fan, if it was already running.  
+Pressing the Speed button and the Timer button at the _same_ time for six seconds will __LOCK__ the physical buttons.  If the buttons are pressed after LOCK mode is enabled, then the screen will display "LOCKED".  Pressing the Speed button and the Timer button at the _same_ time for three more seconds will __UNLOCK__ the physical buttons.  __Note:__ Locking from the physical buttons will cancel the timer and turn off the fan, if it was already running.  Turning on the fan from the WebUI, MQTT, or API will disable lock mode as a safety mechanism, so you always have the ability to turn off from physical buttons while the fan is running. 
 
 __2. WebUI__
 

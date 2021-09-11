@@ -560,6 +560,7 @@ void setSpeed() {
     if (state == 1) {
       digitalWrite(GPIO_LOWrelay, HIGH);  // Turn OFF LOW relay
       digitalWrite(GPIO_HIGHrelay, LOW);  // Turn ON HIGH relay
+      lockmode = false;  // Turn OFF Lockmode (for safety purposes)
       #ifdef mqttenabled
       client.publish(mqttStateTopic, "ON");
       client.publish(mqttSpeedStateTopic, "high");
@@ -569,6 +570,7 @@ void setSpeed() {
     else {
       digitalWrite(GPIO_HIGHrelay, HIGH);  // Turn OFF HIGH relay
       digitalWrite(GPIO_LOWrelay, LOW);  // Turn ON LOW relay
+      lockmode = false;  // Turn OFF Lockmode (for safety purposes)
       #ifdef mqttenabled
       client.publish(mqttStateTopic, "ON");
       client.publish(mqttSpeedStateTopic, "low");
