@@ -42,10 +42,11 @@
 #include <PubSubClient.h>
 
 // Edit these values for your implementation
-char defaultmqttServer[] = "192.168.10.46";  // put your MQTT Server Address here
+char defaultmqttServer[] = "192.168.10.242";  // put your MQTT Server Address here
 char defaultmqttPort[] = "1883"; // put your MQTT Server Port here
 char defaultmqttUser[] = "mqtt-user"; // put your MQTT Server Username here
 char defaultmqttPassword[] = "password"; // put your MQTT Server Password here
+int mqttRetries = 100; // number of retries before disabling MQTT, if connection fails
 // End value edit
 String mqttServer = String(defaultmqttServer);
 int mqttPort = atoi(defaultmqttPort);
@@ -147,7 +148,11 @@ void handleChangeSpeed();  // function to change fan speed High - Low - Off
 void handleRefreshData();  // function to handle refresh data for main page
 void handleDiag(); // function for display diagnostic screen
 void handleRestart(); // function for restarting the ESP
+void handleWificonfig(); // function to reset connection data and start AP mode
 void handleToggleLock(); // function to toggle lock mode 
+
+// **** Init Wifi / Wifi Manager
+WiFiManager wifiManager;
 
 // This function's author is apicquot from https://forum.arduino.cc/index.php?topic=228884.0
 String IpAddress2String(const IPAddress& ipAddress)
@@ -194,9 +199,6 @@ void setup(void){
   display.println("Starting AP Mode...");
   display.display();
 
-  // **** Init Wifi / Wifi Manager
-  WiFiManager wifiManager;
-
   #ifdef mqttenabled
   // Add mqtt server to the WiFi Manager Settings
   // id/name, placeholder/prompt, default, length
@@ -209,11 +211,10 @@ void setup(void){
   wifiManager.addParameter(&your_mqtt_port);
   wifiManager.addParameter(&your_mqtt_user);
   wifiManager.addParameter(&your_mqtt_password);
-  
   #endif
   
-  wifiManager.autoConnect("Smart-WHF-AP");
   wifiManager.setHostname(wifiHostname);
+  wifiManager.autoConnect("Smart-WHF-AP");
 
   #ifdef mqttenabled
   // Get values for custom setup
@@ -259,6 +260,7 @@ void setup(void){
   server.on("/diag", handleDiag);
   server.on("/restart", handleRestart);
   server.on("/togglelock", handleToggleLock);
+  server.on("/wificonfig", handleWificonfig);
 
   server.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
 
@@ -285,9 +287,9 @@ void setup(void){
     if (client.connect("smartwhfclient", mqttUser.c_str(), mqttPassword.c_str() )) {
       event = "MQTT Connected.";
     } else {
-      Serial.print("failed with state ");
+      Serial.print(" ** MQTT Failed with state: ");
       Serial.print(client.state());
-      event = "MQTT Failed.";
+      Serial.println("");
     }
   
     if(client.connected()) {
@@ -325,11 +327,13 @@ void loop(void){
 
   #ifdef mqttenabled 
   // Check MQTT Connection (non-blocking)
-  if ((!client.connected()) && (now - mqttLastCheck > 2000)) {
-    reconnect();
-    mqttLastCheck = now; 
-  } else {
-    client.loop();
+  if (mqttRetries >= 1) {
+    if ((!client.connected()) && (now - mqttLastCheck > 2000)) {
+      reconnect();
+      mqttLastCheck = now; 
+    } else {
+      client.loop();
+    }
   }
   #endif
 
@@ -739,10 +743,14 @@ void handleRefreshData() {
 void handleDiag() {
   #ifdef mqttenabled
   String mqttstatus;
-  if (!client.connected()) {
-    mqttstatus = "<i style=\"color:red;\">MQTT is NOT connected.</i>";
+  if (mqttRetries >= 1) {
+    if (!client.connected()) {
+      mqttstatus = "<i style=\"color:red;\">MQTT is NOT connected.</i>";
+    } else {
+      mqttstatus = "<i style=\"color:green;\">MQTT is connected.</i>";
+    }
   } else {
-    mqttstatus = "<i style=\"color:green;\">MQTT is connected.</i>";
+      mqttstatus = "<i style=\"color:red;\">MQTT is currently disabled. Exceeded connection retries.</i>";
   }
   #endif 
 
@@ -781,6 +789,7 @@ void handleDiag() {
   response += mqttstatus;
   #endif
   response += "<br></div><br>"
+        "<input type=\"button\" class=\"button\" onclick=\"location.href='/wificonfig';\" value=\"RESET SETTINGS & GOTO AP MODE\"> <br><br>"
         "<input type=\"button\" class=\"button\" onclick=\"location.href='/restart';\" value=\"RESTART\"> <br><br>"
         "<input type=\"button\" class=\"button\" onclick=\"location.href='/togglelock';\" value=\"Toggle Lock\"> <br><br>"
         "<input type=\"button\" class=\"button\" onclick=\"location.href='/';\" value=\"Home\"> <br><br>"
@@ -830,6 +839,31 @@ void handleToggleLock() {
   server.sendHeader("Location", String("/diag"), true); 
   server.send(302, "text/plain", "");
 }
+
+void handleWificonfig() {
+String response ="<!DOCTYPE html>"
+  "<html>"
+    "<head>";
+    response += favicon;
+    response += "<style>"
+        " body {"
+          "font-family:Arial, Helvetica, sans-serif;"
+        "}"
+      "</style>"
+    "</head>"
+
+    "<body>"
+      "<center>"
+        "<H1>Resetting WiFi Settings and Starting AP Mode...</H1><br>"
+        "<i style=\"color:red;\">Your WiFi SSID and Password have been reset and the device is going into AP Mode.<br>"
+        "Connect to this device's AP named: \"Smart-WHF-AP\" from your computer or smartphone.<br>"
+        "Once connected, you will need to navigate to http://192.168.4.1 to reconfigure this device.</i>";
+  server.send(200, "text/html", response);   // Send HTTP status 200 (Ok) and send some text to the browser/client
+  delay(2000);
+  wifiManager.resetSettings();
+  ESP.restart();
+}
+
 
 void handleAPI() {
   StaticJsonDocument<128> responsedoc;
@@ -1060,9 +1094,12 @@ void reconnect() {
   if (client.connect("smartwhfclient", mqttUser.c_str(), mqttPassword.c_str() )) {
     event = "MQTT Connected.";
   } else {
-    Serial.print("failed with state ");
+    Serial.print(" ** MQTT Failed with state ");
     Serial.print(client.state());
-    event = "MQTT Failed.";
+    mqttRetries -= 1;
+    if (mqttRetries < 1) {
+      Serial.println(" ** MQTT Exceeded Connection Attemps, disabling MQTT checks. ");
+    }
   }
 
   Serial.println(event);
