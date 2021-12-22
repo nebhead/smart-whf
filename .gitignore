@@ -2,3 +2,5 @@
 workspace.code-workspace
 .vscode/arduino.json
 local/
+
+.vscode/
