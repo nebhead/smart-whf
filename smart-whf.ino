@@ -24,7 +24,7 @@
 */
 
 #define mqttenabled // Comment out this line to disable MQTT support
-
+#include <FS.h> // Apparently need this to be included first
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266mDNS.h>
@@ -154,6 +154,15 @@ void handleToggleLock(); // function to toggle lock mode
 // **** Init Wifi / Wifi Manager
 WiFiManager wifiManager;
 
+// Flag for saving MQTT data to config.json
+bool shouldSaveConfig = false;
+
+// Callback notifying us of the need to save config.json
+void saveConfigCallback () {
+  Serial.println("Intent to Save Config.");
+  shouldSaveConfig = true;
+}
+
 // This function's author is apicquot from https://forum.arduino.cc/index.php?topic=228884.0
 String IpAddress2String(const IPAddress& ipAddress)
 {
@@ -200,6 +209,53 @@ void setup(void){
   display.display();
 
   #ifdef mqttenabled
+    //read configuration from FS json
+  Serial.println("Attempting to Mount Filesystem...");
+
+  if (SPIFFS.begin()) {
+    Serial.println("Mounted File System.");
+    if (SPIFFS.exists("/config.json")) {
+      //file exists, reading and loading
+      Serial.println("Looking for config.json File");
+      File configFile = SPIFFS.open("/config.json", "r");
+      if (configFile) {
+        Serial.println("Opened Config File");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+
+        configFile.readBytes(buf.get(), size);
+
+#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
+        DynamicJsonDocument json(1024);
+        auto deserializeError = deserializeJson(json, buf.get());
+        serializeJson(json, Serial);
+        if ( ! deserializeError ) {
+#else
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& json = jsonBuffer.parseObject(buf.get());
+        json.printTo(Serial);
+        if (json.success()) {
+#endif
+          strcpy(defaultmqttServer, json["mqtt_server"]);
+          strcpy(defaultmqttPort, json["mqtt_port"]);
+          strcpy(defaultmqttUser, json["mqtt_username"]);
+          strcpy(defaultmqttPassword, json["mqtt_password"]);
+        } else {
+          Serial.println("failed to load json config");
+        }
+        configFile.close();
+      }
+    } else {
+      Serial.println("File config.json not found.");
+    }
+  } else {
+    Serial.println("Failed to Mount Filesystem");
+  }
+  //end read
+  
+  wifiManager.setSaveConfigCallback(saveConfigCallback);
+
   // Add mqtt server to the WiFi Manager Settings
   // id/name, placeholder/prompt, default, length
   WiFiManagerParameter your_mqtt_server("mserver", "MQTT Server", defaultmqttServer, 40);
@@ -223,6 +279,41 @@ void setup(void){
   mqttPort = mqttPortStrPlaceHolder.toInt();
   mqttUser = your_mqtt_user.getValue();
   mqttPassword = your_mqtt_password.getValue();
+
+  //read updated parameters
+  //strcpy(mqttServer, your_mqtt_server.getValue());
+  //strcpy(mqttPortStrPlaceHolder, your_mqtt_port.getValue());
+
+  //save the custom parameters to FS
+  if (shouldSaveConfig) {
+    Serial.println("Saving config.json...");
+#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
+    DynamicJsonDocument json(1024);
+#else
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& json = jsonBuffer.createObject();
+#endif
+    json["mqtt_server"] = mqttServer;
+    json["mqtt_port"] = mqttPortStrPlaceHolder;
+    json["mqtt_username"] = mqttUser;
+    json["mqtt_password"] = mqttPassword;
+
+    File configFile = SPIFFS.open("/config.json", "w");
+    if (!configFile) {
+      Serial.println("Failed to open config file for writing!!");
+    }
+
+#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
+    serializeJson(json, Serial);
+    serializeJson(json, configFile);
+#else
+    json.printTo(Serial);
+    json.printTo(configFile);
+#endif
+    configFile.close();
+    //end save
+  }
+
   #endif
   
   event = "Connected to " + WiFi.SSID();
